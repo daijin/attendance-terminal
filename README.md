@@ -154,6 +154,8 @@ sudo ./install.sh
 sudoedit /etc/attendance-terminal/config.json
 ```
 
+インストーラーは、ログインセッションを持たない`attendance`ユーザーからPC/SCを利用できるよう、専用のpolkitルールも配置します。
+
 最低限、次を端末ごとに変更します。
 
 - `device_id`: 全端末で重複しない名前
