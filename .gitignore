@@ -1,0 +1,28 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments and packaging output
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Local configuration, databases, and secrets
+config.json
+*.sqlite
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.db
+*.db-shm
+*.db-wal
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+.DS_Store

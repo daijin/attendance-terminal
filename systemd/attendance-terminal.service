@@ -1,0 +1,23 @@
+[Unit]
+Description=NFC attendance terminal
+After=pcscd.socket time-sync.target
+Wants=pcscd.socket
+
+[Service]
+Type=simple
+User=attendance
+Group=attendance
+SupplementaryGroups=gpio audio
+ExecStart=/opt/attendance-terminal/venv/bin/attendance-terminal --config /etc/attendance-terminal/config.json
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/attendance-terminal
+RuntimeDirectory=attendance-terminal
+RuntimeDirectoryPreserve=restart
+
+[Install]
+WantedBy=multi-user.target

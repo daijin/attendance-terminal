@@ -1,0 +1,12 @@
+[Unit]
+Description=Synchronize system clock and DS1307 RTC
+After=systemd-timesyncd.service network-online.target
+Wants=systemd-timesyncd.service
+Before=attendance-terminal.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/attendance-terminal/sync-clock.sh
+
+[Install]
+WantedBy=multi-user.target
