@@ -12,6 +12,7 @@
   "online_led_pin": null,
   "offline_led_pin": null,
   "notification_sound": "/etc/attendance-terminal/sounds/FFXIV_Notification.mp3",
+  "startup_sound": "/etc/attendance-terminal/sounds/FFXIV_Limit_Break_Charged.mp3",
   "audio_device": "sysdefault:CARD=Headphones",
   "audio_volume_percent": 75
 }

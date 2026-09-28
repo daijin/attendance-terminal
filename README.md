@@ -54,8 +54,11 @@ RC-S300自身のLEDはカード通信状態を示しますが、任意の起動�
 
 ```bash
 sudo cp beep.mp3 /etc/attendance-terminal/sounds/beep.mp3
+sudo cp startup.mp3 /etc/attendance-terminal/sounds/startup.mp3
 sudo chown root:attendance /etc/attendance-terminal/sounds/beep.mp3
+sudo chown root:attendance /etc/attendance-terminal/sounds/startup.mp3
 sudo chmod 0640 /etc/attendance-terminal/sounds/beep.mp3
+sudo chmod 0640 /etc/attendance-terminal/sounds/startup.mp3
 ```
 
 `config.json`を次のようにします。
@@ -63,9 +66,12 @@ sudo chmod 0640 /etc/attendance-terminal/sounds/beep.mp3
 ```json
 "buzzer_pin": null,
 "notification_sound": "/etc/attendance-terminal/sounds/beep.mp3",
+"startup_sound": "/etc/attendance-terminal/sounds/startup.mp3",
 "audio_device": "sysdefault:CARD=Headphones",
 "audio_volume_percent": 70
 ```
+
+`startup_sound`はOS起動時のモード通知だけに使われます。省略した場合は、互換性のため`notification_sound`を使います。オンラインモードでは2回、オフラインモードでは1回再生します。
 
 `audio_volume_percent`はMP3再生に対するソフトウェア音量で、`0`から`100`まで指定できます。まず`50`程度から試し、必要に応じて調整してください。イヤホン使用時にいきなり`100`で試さないでください。
 

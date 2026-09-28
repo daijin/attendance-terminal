@@ -22,6 +22,7 @@ class Config:
     offline_led_pin: int | None = None
     notification_wav: str | None = None
     notification_sound: str | None = None
+    startup_sound: str | None = None
     audio_device: str = "default"
     audio_volume_percent: int = 70
 

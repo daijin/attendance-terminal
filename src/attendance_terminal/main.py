@@ -23,13 +23,14 @@ def run(config: Config) -> None:
 
     store = PunchStore(config.database_path, config.device_id)
     notifier = Notifier(
-        config.buzzer_pin,
-        config.online_led_pin,
-        config.offline_led_pin,
-        config.notification_wav,
-        config.audio_device,
-        config.notification_sound,
-        config.audio_volume_percent,
+        buzzer_pin=config.buzzer_pin,
+        online_led_pin=config.online_led_pin,
+        offline_led_pin=config.offline_led_pin,
+        notification_wav=config.notification_wav,
+        audio_device=config.audio_device,
+        notification_sound=config.notification_sound,
+        audio_volume_percent=config.audio_volume_percent,
+        startup_sound=config.startup_sound,
     )
     online_mode = network_available()
     # /run is cleared at OS boot. Keep the marker over service restarts so the

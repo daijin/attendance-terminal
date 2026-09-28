@@ -20,11 +20,13 @@ class Notifier:
         audio_device: str = "default",
         notification_sound: str | None = None,
         audio_volume_percent: int = 70,
+        startup_sound: str | None = None,
     ) -> None:
         self.buzzer = self.online_led = self.offline_led = None
         # notification_wav is retained for compatibility with existing configs.
         selected_sound = notification_sound or notification_wav
-        self.notification_sound = Path(selected_sound) if selected_sound else None
+        self.notification_sound = self._validate_sound(selected_sound, "notification")
+        self.startup_sound = self._validate_sound(startup_sound, "startup")
         self.audio_device = audio_device
         if not 0 <= audio_volume_percent <= 100:
             raise ValueError("audio_volume_percent must be between 0 and 100")
@@ -38,11 +40,18 @@ class Notifier:
                 self.offline_led = LED(offline_led_pin) if offline_led_pin is not None else None
             except Exception:
                 LOG.exception("GPIO notifier initialization failed; continuing without GPIO")
-        if self.notification_sound and not self.notification_sound.is_file():
-            LOG.error("notification sound does not exist: %s", self.notification_sound)
-            self.notification_sound = None
-        if self.notification_sound and self.notification_sound.suffix.casefold() not in (".mp3", ".wav"):
-            raise ValueError("notification sound must be an MP3 or WAV file")
+
+    @staticmethod
+    def _validate_sound(value: str | None, label: str) -> Path | None:
+        if not value:
+            return None
+        sound = Path(value)
+        if not sound.is_file():
+            LOG.error("%s sound does not exist: %s", label, sound)
+            return None
+        if sound.suffix.casefold() not in (".mp3", ".wav"):
+            raise ValueError(f"{label} sound must be an MP3 or WAV file")
+        return sound
 
     def set_mode(self, online: bool, audible: bool = True) -> None:
         if self.online_led:
@@ -50,7 +59,11 @@ class Notifier:
         if self.offline_led:
             self.offline_led.value = not online
         if audible:
-            self._beep(count=2 if online else 1, duration=0.12)
+            self._beep(
+                count=2 if online else 1,
+                duration=0.12,
+                sound=self.startup_sound or self.notification_sound,
+            )
 
     def success(self) -> None:
         self._beep(count=1, duration=0.08)
@@ -58,7 +71,12 @@ class Notifier:
     def error(self) -> None:
         self._beep(count=3, duration=0.15)
 
-    def _beep(self, count: int, duration: float) -> None:
+    def _beep(
+        self,
+        count: int,
+        duration: float,
+        sound: Path | None = None,
+    ) -> None:
         if self.buzzer:
             for index in range(count):
                 self.buzzer.on()
@@ -67,20 +85,21 @@ class Notifier:
                 if index + 1 < count:
                     time.sleep(0.08)
             return
-        if self.notification_sound:
+        selected_sound = sound or self.notification_sound
+        if selected_sound:
             for index in range(count):
                 try:
-                    if self.notification_sound.suffix.casefold() == ".mp3":
+                    if selected_sound.suffix.casefold() == ".mp3":
                         # mpg123 uses 32768 as 100% software volume.
                         scale = round(32768 * self.audio_volume_percent / 100)
                         command = [
                             "mpg123", "-q", "-a", self.audio_device,
-                            "-f", str(scale), str(self.notification_sound),
+                            "-f", str(scale), str(selected_sound),
                         ]
                     else:
                         command = [
                             "aplay", "-q", "-D", self.audio_device,
-                            str(self.notification_sound),
+                            str(selected_sound),
                         ]
                     subprocess.run(
                         command,
