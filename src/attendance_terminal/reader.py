@@ -1,11 +1,34 @@
 from __future__ import annotations
 
 import logging
+import queue
 import time
 from collections.abc import Callable
+from typing import Any
 
 LOG = logging.getLogger(__name__)
 GET_UID = [0xFF, 0xCA, 0x00, 0x00, 0x00]
+
+
+def _read_uid(card: Any) -> str:
+    """Read one UID from a card reported by PC/SC."""
+    connection = card.createConnection()
+    connection.connect()
+    try:
+        data, sw1, sw2 = connection.transmit(GET_UID)
+        if (sw1, sw2) != (0x90, 0x00) or not data:
+            raise RuntimeError(f"GET UID failed: {sw1:02X}{sw2:02X}")
+        return "".join(f"{byte:02X}" for byte in data)
+    finally:
+        try:
+            connection.disconnect()
+        except Exception:
+            # Removal may make disconnect fail; the connection is no longer used.
+            pass
+        try:
+            connection.release()
+        except Exception:
+            pass
 
 
 class Reader:
@@ -16,48 +39,43 @@ class Reader:
         self.on_uid = on_uid
 
     def run_forever(self, stop_requested: Callable[[], bool]) -> None:
-        from smartcard.Exceptions import CardConnectionException, NoCardException
-        from smartcard.System import readers
+        from smartcard.CardMonitoring import CardMonitor, CardObserver
 
-        logged_missing = False
+        events: queue.Queue[Any] = queue.Queue()
+
+        class Observer(CardObserver):
+            def update(self, observable: Any, actions: Any) -> None:
+                added_cards, _removed_cards = actions
+                for card in added_cards:
+                    events.put(card)
+
+        observer = Observer()
+
         while not stop_requested():
+            monitor = None
             try:
-                devices = [
-                    device for device in readers()
-                    if self.reader_name_contains in str(device).casefold()
-                ]
-            except Exception:
-                if not logged_missing:
-                    LOG.exception("PC/SC service is unavailable; waiting")
-                    logged_missing = True
-                time.sleep(2)
-                continue
-            if not devices:
-                if not logged_missing:
-                    LOG.error("RC-S300 not found; waiting for reader")
-                    logged_missing = True
-                time.sleep(2)
-                continue
-            logged_missing = False
-            device = devices[0]
-            try:
-                connection = device.createConnection()
-                connection.connect()
-                data, sw1, sw2 = connection.transmit(GET_UID)
-                if (sw1, sw2) != (0x90, 0x00) or not data:
-                    raise RuntimeError(f"GET UID failed: {sw1:02X}{sw2:02X}")
-                self.on_uid("".join(f"{byte:02X}" for byte in data))
-                # Wait for removal. This prevents a held card from creating punches.
+                monitor = CardMonitor()
+                monitor.addObserver(observer)
                 while not stop_requested():
                     try:
-                        connection.transmit(GET_UID)
-                        time.sleep(0.15)
-                    except (CardConnectionException, NoCardException):
-                        break
+                        card = events.get(timeout=0.5)
+                    except queue.Empty:
+                        continue
+
+                    reader_name = str(getattr(card, "reader", ""))
+                    if self.reader_name_contains not in reader_name.casefold():
+                        continue
+
+                    try:
+                        self.on_uid(_read_uid(card))
                     except Exception:
-                        break
-            except (CardConnectionException, NoCardException):
-                time.sleep(0.15)
+                        LOG.exception("card read failed")
             except Exception:
-                LOG.exception("card read failed")
-                time.sleep(1)
+                LOG.exception("PC/SC monitor is unavailable; waiting")
+                time.sleep(2)
+            finally:
+                if monitor is not None:
+                    try:
+                        monitor.deleteObserver(observer)
+                    except Exception:
+                        pass
