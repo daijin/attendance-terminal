@@ -101,26 +101,17 @@ sudo apt full-upgrade
 sudo reboot
 ```
 
-I2Cを有効にし、Trixieで使われる`/boot/firmware/config.txt`へ次を追記します。3.5mm音声端子を使うため、既存の`dtparam=audio=on`も有効であることを確認します。
+I2CとRTCの設定は、後述の`install.sh`がTrixieで使われる`/boot/firmware/config.txt`へ次の管理ブロックとして追記します。再度実行しても重複して追記されません。3.5mm音声端子を使う場合は、既存の`dtparam=audio=on`も有効であることを確認します。
 
 ```ini
+# BEGIN attendance-terminal
+[all]
 dtparam=i2c_arm=on
 dtoverlay=i2c-rtc,ds1307
+# END attendance-terminal
+
+# 3.5mm音声端子を使う場合
 dtparam=audio=on
-```
-
-再起動後に確認します。
-
-```bash
-ls -l /dev/rtc*
-sudo hwclock --show
-```
-
-初回だけ正しい時刻をRTCへ保存します（ネット接続済みでNTP同期後に実行）。
-
-```bash
-timedatectl status
-sudo hwclock --systohc --utc
 ```
 
 `fake-hwclock`が入っていれば、実RTCとの競合を避けるため無効化します。ユニットが存在しないという表示だけなら問題ありません。
@@ -177,6 +168,20 @@ sudo reboot
 ```
 
 ## 5. 動作確認・保守
+
+再起動後、RTCが認識されていることを確認します。
+
+```bash
+ls -l /dev/rtc*
+sudo hwclock --show
+```
+
+初回だけ正しい時刻をRTCへ保存します（ネット接続済みでNTP同期後に実行）。
+
+```bash
+timedatectl status
+sudo hwclock --systohc --utc
+```
 
 ```bash
 pcsc_scan

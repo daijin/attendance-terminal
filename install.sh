@@ -14,6 +14,23 @@ fi
 if [ "$(dpkg --print-architecture)" != "arm64" ]; then
   echo "Warning: the requested target is arm64; detected $(dpkg --print-architecture)." >&2
 fi
+
+boot_config=/boot/firmware/config.txt
+if [ ! -f "$boot_config" ]; then
+  echo "Error: Raspberry Pi boot config not found: $boot_config" >&2
+  exit 1
+fi
+if ! grep -Fqx '# BEGIN attendance-terminal' "$boot_config"; then
+  cat >>"$boot_config" <<'EOF'
+
+# BEGIN attendance-terminal
+[all]
+dtparam=i2c_arm=on
+dtoverlay=i2c-rtc,ds1307
+# END attendance-terminal
+EOF
+fi
+
 apt-get update
 apt-get install -y python3-venv python3-dev swig libpcsclite-dev pcscd pcsc-tools libccid i2c-tools util-linux-extra alsa-utils mpg123 systemd-timesyncd
 
