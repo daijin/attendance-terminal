@@ -15,7 +15,7 @@ if [ "$(dpkg --print-architecture)" != "arm64" ]; then
   echo "Warning: the requested target is arm64; detected $(dpkg --print-architecture)." >&2
 fi
 apt-get update
-apt-get install -y python3-venv python3-dev swig libpcsclite-dev pcscd pcsc-tools libccid i2c-tools alsa-utils mpg123 systemd-timesyncd
+apt-get install -y python3-venv python3-dev swig libpcsclite-dev pcscd pcsc-tools libccid i2c-tools util-linux-extra alsa-utils mpg123 systemd-timesyncd
 
 id attendance >/dev/null 2>&1 || useradd --system --home /var/lib/attendance-terminal --shell /usr/sbin/nologin attendance
 usermod -a -G audio,gpio attendance
