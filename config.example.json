@@ -1,8 +1,8 @@
 {
   "device_id": "garuda",
   "database_path": "/var/lib/attendance-terminal/punches.sqlite3",
-  "upload_url": "https://script.google.com/macros/s/AKfycbxfCaSW9cOMkVCNZEA9IlMHq0S5OT_bTsRLzcShj4lCsoWiAU7NDmnzl_ibPSJZkIxd7g/exec",
-  "upload_secret": "hikaokehikaoke",
+  "upload_url": "https://script.google.com/macros/s/SYSTEM_ID/exec",
+  "upload_secret": "SECRET_KEY",
   "sheet_name": "打刻ログ",
   "debounce_seconds": 3.0,
   "upload_interval_seconds": 30.0,
