@@ -26,3 +26,7 @@ config.json
 .idea/
 *.swp
 .DS_Store
+
+# 音声ファイル
+*.wav
+*.mp3

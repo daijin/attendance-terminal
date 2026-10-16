@@ -87,7 +87,46 @@ sudo -u attendance mpg123 -q -a 'sysdefault:CARD=Headphones' -f 22938 /etc/atten
 
 3.5mm端子から鳴らない場合は、`sudo raspi-config`の音声出力設定でHeadphones（Analog）を選択します。実際のカード名が異なる場合は、`aplay -L`に表示された`sysdefault:`名を`audio_device`へ設定してください。イヤホンは接続できますが、端子はスピーカーレベル出力ではないため、一般的なパッシブスピーカーでは十分な音量が出ません。
 
-端末全体のアナログ出力レベルは`alsamixer`でも調整できます。`F6`でHeadphonesカードを選択し、左右キーで出力、上下キーで音量を変更します。通常はハードウェア側を一度設定し、日常の調整には`audio_volume_percent`を使う方が安全です。
+### 3.5mm出力の音量と再起動後の復元
+
+`install.sh`は[音量設定用のsystemd設定](systemd/90-audio-volume.conf)を`/etc/systemd/system/attendance-terminal.service.d/90-audio-volume.conf`へ配置します。ALSAの復元処理後、打刻アプリの起動直前に毎回、次を実行します。サービスの再起動時にも適用されます。
+
+```bash
+amixer -c Headphones sset PCM 0dB unmute
+```
+
+`0dB`は無音ではなく、出力を減衰させない設定です。`amixer`の通常のパーセント表示は調整範囲に対する値なので、例えば`78%`でも約`-20dB`まで絞られている場合があります。音量の確認にはdB表示を使います。スピーカー本体の音量を控えめにしてから試し、日常の調整には`audio_volume_percent`またはスピーカー本体を使ってください。
+
+GUIは不要です。SSHのターミナルで、インストール後と再起動後に次を実行し、`[0.00dB]`と`[on]`を確認します。
+
+```bash
+amixer -c Headphones
+systemctl status attendance-terminal.service --no-pager -l
+sudo journalctl -b -u attendance-terminal.service --no-pager
+```
+
+Raspberry Pi 3BとSRS-BTD70の3.5mm接続では、`alsactl store`による保存だけでは再起動後に小さい音量へ戻り、復元コマンドへ`-U`を追加しても改善しませんでした。上記の起動直前の設定で、再起動後も適切な音量になることを確認しています。この対策のためにOS全体の`alsa-restore.service`を変更する必要はありません。
+
+音声カードがない場合など、音量設定に失敗しても打刻サービスは起動を続け、詳細をログへ出力します。USBやHDMIなど別の出力を使う場合、この設定はその出力には適用されません。カード名・調整対象・レベルを変える場合は、次のファイルを追加します（`90-audio-volume.conf`の既存の音量設定コマンドを置き換えます）。
+
+```bash
+sudoedit /etc/systemd/system/attendance-terminal.service.d/99-audio-volume-local.conf
+```
+
+例えば、3.5mm出力の基準レベルを`-6dB`にする場合は次の内容にします。
+
+```ini
+[Service]
+ExecStartPre=
+ExecStartPre=-/usr/bin/amixer -c Headphones -- sset PCM -6dB unmute
+```
+
+音量の自動設定を使わない場合は、`[Service]`と空の`ExecStartPre=`の2行だけにします。`99-audio-volume-local.conf`はインストーラーの再実行でも上書きされません。変更後は次を実行します。
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart attendance-terminal.service
+```
 
 ## 2. Raspberry Pi OS Trixie 64-bitの準備
 
@@ -152,6 +191,8 @@ sudoedit /etc/attendance-terminal/config.json
 ```
 
 インストーラーは、ログインセッションを持たない`attendance`ユーザーからPC/SCを利用できるよう、専用のpolkitルールも配置します。
+
+3.5mm出力の音量設定も自動で配置します。次の端末では`alsactl store`や音量設定用のsystemdファイルを手作業で追加する必要はありません。詳細は「3.5mm出力の音量と再起動後の復元」を参照してください。
 
 最低限、次を端末ごとに変更します。
 

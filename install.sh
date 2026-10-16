@@ -52,6 +52,8 @@ fi
 install -o root -g root -m 0755 "$project_dir/systemd/sync-clock.sh" /usr/local/lib/attendance-terminal/sync-clock.sh
 install -o root -g root -m 0644 "$project_dir/systemd/attendance-clock.service" /etc/systemd/system/
 install -o root -g root -m 0644 "$project_dir/systemd/attendance-terminal.service" /etc/systemd/system/
+install -d -o root -g root -m 0755 /etc/systemd/system/attendance-terminal.service.d
+install -o root -g root -m 0644 "$project_dir/systemd/90-audio-volume.conf" /etc/systemd/system/attendance-terminal.service.d/
 install -o root -g root -m 0644 "$project_dir/systemd/60-attendance-terminal-pcsc.rules" /etc/polkit-1/rules.d/
 
 systemctl daemon-reload
