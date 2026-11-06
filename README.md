@@ -53,15 +53,18 @@ RC-S300自身のLEDはカード通信状態を示しますが、任意の起動�
 短いMP3ファイルを配置します。打刻処理を長時間止めないよう、1秒未満の効果音を推奨します。
 
 ```bash
-sudo cp beep.mp3 /etc/attendance-terminal/sounds/beep.mp3
-sudo cp startup.mp3 /etc/attendance-terminal/sounds/startup.mp3
-sudo chown root:attendance /etc/attendance-terminal/sounds/beep.mp3
-sudo chown root:attendance /etc/attendance-terminal/sounds/startup.mp3
-sudo chmod 0640 /etc/attendance-terminal/sounds/beep.mp3
-sudo chmod 0640 /etc/attendance-terminal/sounds/startup.mp3
+sudo bash install-sounds.sh beep.mp3 startup.mp3
 ```
 
-`config.json`を次のようにします。
+`install.sh`の実行後、リポジトリのディレクトリで実行してください。MP3/WAVファイルを複数指定でき、元のファイル名で`/etc/attendance-terminal/sounds/`へ配置します。同名のファイルは上書きします。ディレクトリは`root:attendance`・`0750`、音声ファイルは`root:attendance`・`0640`に設定し、サービス実行ユーザー`attendance`で読み取れることも確認します。
+
+同梱の音声を`config.example.json`の設定どおりに配置する場合は、次を実行します。
+
+```bash
+sudo bash install-sounds.sh FFXIV_Notification.mp3 FFXIV_Limit_Break_Charged.mp3
+```
+
+スクリプトは設定ファイルを変更しません。`beep.mp3`と`startup.mp3`を使う場合は、`/etc/attendance-terminal/config.json`を次のようにします。
 
 ```json
 "buzzer_pin": null,
@@ -70,6 +73,8 @@ sudo chmod 0640 /etc/attendance-terminal/sounds/startup.mp3
 "audio_device": "sysdefault:CARD=Headphones",
 "audio_volume_percent": 70
 ```
+
+配置・設定後は`sudo systemctl restart attendance-terminal`で反映します。
 
 `startup_sound`はOS起動時のモード通知だけに使われます。省略した場合は、互換性のため`notification_sound`を使います。オンラインモードでは2回、オフラインモードでは1回再生します。
 
